@@ -26,7 +26,7 @@ export default function LoginPage() {
         <Card className="space-y-5 p-6 sm:p-8">
           <div className="space-y-2">
             <h2 className="text-2xl font-semibold">Log in</h2>
-            <p className="text-sm text-[var(--muted-foreground)]">Secure credentials authentication with protected dashboard routes.</p>
+            <p className="text-sm text-[var(--muted-foreground)]">Secure access to protected dashboard routes.</p>
           </div>
           <AuthForm action={loginAction} mode="login" />
           <p className="text-sm text-[var(--muted-foreground)]">

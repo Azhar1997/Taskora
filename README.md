@@ -158,6 +158,5 @@ The following checks were run successfully in this workspace:
 
 ## Notes
 
-- The project currently uses credentials auth for a straightforward local portfolio setup.
 - Prisma is configured for PostgreSQL and seeded with realistic sample data for demos.
 - The UI is intentionally custom rather than generator-heavy so the architecture and component decisions stay visible.
