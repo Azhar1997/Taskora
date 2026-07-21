@@ -4,10 +4,27 @@ import { revalidatePath } from "next/cache";
 import { requireUser } from "@/data/workspaces";
 import { prisma } from "@/lib/prisma";
 import { canManageProjects } from "@/lib/permissions";
+import { parseDateInput } from "@/lib/utils";
 import { projectSchema } from "@/lib/validators";
 
-function normalizeDate(value?: string) {
-  return value ? new Date(value) : null;
+function normalizeDate(value?: string | null) {
+  return parseDateInput(value);
+}
+
+async function ensureProjectInWorkspace(projectId: string, workspaceId: string) {
+  const project = await prisma.project.findFirst({
+    where: {
+      id: projectId,
+      workspaceId,
+    },
+    select: {
+      id: true,
+    },
+  });
+
+  if (!project) {
+    throw new Error("The selected project was not found in this workspace.");
+  }
 }
 
 export async function saveProject(formData: FormData) {
@@ -40,6 +57,8 @@ export async function saveProject(formData: FormData) {
   }
 
   if (parsed.data.projectId) {
+    await ensureProjectInWorkspace(parsed.data.projectId, parsed.data.workspaceId);
+
     await prisma.project.update({
       where: { id: parsed.data.projectId },
       data: {
@@ -106,6 +125,7 @@ export async function deleteProject(formData: FormData) {
     throw new Error("You do not have permission to delete this project.");
   }
 
+  await ensureProjectInWorkspace(projectId, workspaceId);
   await prisma.project.delete({
     where: { id: projectId },
   });

@@ -22,6 +22,7 @@ export default async function BoardPage({
   const now = new Date();
   const thisWeek = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
   const filteredTasks = workspace.tasks.filter((task) => {
+    const dueDate = task.dueDate ? new Date(task.dueDate) : null;
     const matchesSearch =
       !filters.q ||
       task.title.toLowerCase().includes(filters.q.toLowerCase()) ||
@@ -33,8 +34,8 @@ export default async function BoardPage({
     const matchesDue =
       !filters.due ||
       filters.due === "ALL" ||
-      (filters.due === "OVERDUE" && Boolean(task.dueDate && new Date(task.dueDate) < now && task.status !== "DONE")) ||
-      (filters.due === "THIS_WEEK" && Boolean(task.dueDate && new Date(task.dueDate) <= thisWeek));
+      (filters.due === "OVERDUE" && Boolean(dueDate && dueDate < now && task.status !== "DONE")) ||
+      (filters.due === "THIS_WEEK" && Boolean(dueDate && dueDate >= now && dueDate <= thisWeek));
     return matchesSearch && matchesStatus && matchesPriority && matchesAssignee && matchesLabel && matchesDue;
   });
 

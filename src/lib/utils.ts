@@ -19,9 +19,23 @@ export function formatRelativeDate(date: Date | string) {
   return formatDistanceToNowStrict(new Date(date), { addSuffix: true });
 }
 
+export function parseDateInput(value?: string | null) {
+  if (!value) return null;
+  const [year, month, day] = value.split("-").map(Number);
+  if (!year || !month || !day) return null;
+
+  return new Date(year, month - 1, day, 12, 0, 0, 0);
+}
+
 export function formatDateInput(date?: Date | string | null) {
   if (!date) return "";
-  return new Date(date).toISOString().slice(0, 10);
+
+  const normalized = new Date(date);
+  const year = normalized.getFullYear();
+  const month = String(normalized.getMonth() + 1).padStart(2, "0");
+  const day = String(normalized.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
 }
 
 export function getInitials(name: string) {

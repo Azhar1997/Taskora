@@ -4,10 +4,11 @@ import { revalidatePath } from "next/cache";
 import { requireUser } from "@/data/workspaces";
 import { prisma } from "@/lib/prisma";
 import { canManageTasks } from "@/lib/permissions";
+import { parseDateInput } from "@/lib/utils";
 import { taskSchema } from "@/lib/validators";
 
-function normalizeDate(value?: string) {
-  return value ? new Date(value) : null;
+function normalizeDate(value?: string | null) {
+  return parseDateInput(value);
 }
 
 async function ensureTaskPermission(workspaceId: string, userId: string) {
@@ -21,6 +22,44 @@ async function ensureTaskPermission(workspaceId: string, userId: string) {
   if (!membership || !canManageTasks(membership.role)) {
     throw new Error("You do not have permission to manage tasks in this workspace.");
   }
+}
+
+async function ensureProjectInWorkspace(projectId: string, workspaceId: string) {
+  const project = await prisma.project.findFirst({
+    where: {
+      id: projectId,
+      workspaceId,
+    },
+    select: {
+      id: true,
+    },
+  });
+
+  if (!project) {
+    throw new Error("The selected project was not found in this workspace.");
+  }
+}
+
+async function ensureTaskInWorkspace(taskId: string, workspaceId: string) {
+  const task = await prisma.task.findFirst({
+    where: {
+      id: taskId,
+      workspaceId,
+    },
+    select: {
+      id: true,
+      projectId: true,
+      status: true,
+      priority: true,
+      assigneeId: true,
+    },
+  });
+
+  if (!task) {
+    throw new Error("The selected task was not found in this workspace.");
+  }
+
+  return task;
 }
 
 export async function saveTask(formData: FormData) {
@@ -43,15 +82,13 @@ export async function saveTask(formData: FormData) {
   }
 
   await ensureTaskPermission(parsed.data.workspaceId, user.id);
+  await ensureProjectInWorkspace(parsed.data.projectId, parsed.data.workspaceId);
 
   if (parsed.data.taskId) {
-    const previous = await prisma.task.findUnique({
-      where: { id: parsed.data.taskId },
-      select: { status: true, priority: true, assigneeId: true },
-    });
+    const previous = await ensureTaskInWorkspace(parsed.data.taskId, parsed.data.workspaceId);
 
     const task = await prisma.task.update({
-      where: { id: parsed.data.taskId },
+      where: { id: previous.id },
       data: {
         title: parsed.data.title,
         description: parsed.data.description,
@@ -152,6 +189,7 @@ export async function deleteTask(formData: FormData) {
   const taskId = String(formData.get("taskId"));
 
   await ensureTaskPermission(workspaceId, user.id);
+  await ensureTaskInWorkspace(taskId, workspaceId);
   await prisma.task.delete({
     where: {
       id: taskId,
@@ -169,6 +207,7 @@ export async function moveTaskStatus(input: {
 }) {
   const user = await requireUser();
   await ensureTaskPermission(input.workspaceId, user.id);
+  await ensureTaskInWorkspace(input.taskId, input.workspaceId);
 
   const task = await prisma.task.update({
     where: { id: input.taskId },
