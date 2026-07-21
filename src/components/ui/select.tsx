@@ -1,0 +1,14 @@
+import * as React from "react";
+import { cn } from "@/lib/utils";
+
+export function Select({ className, ...props }: React.SelectHTMLAttributes<HTMLSelectElement>) {
+  return (
+    <select
+      className={cn(
+        "h-11 w-full rounded-2xl border bg-[var(--card-strong)] px-4 text-sm outline-none focus:border-[var(--primary)] focus:ring-4 focus:ring-[var(--ring)]",
+        className,
+      )}
+      {...props}
+    />
+  );
+}
